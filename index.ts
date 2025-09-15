@@ -1,5 +1,13 @@
 // 👇 Load environment variables first
-import "dotenv";
+import dotenv from "dotenv";
+import path from "path";
+
+// Force load .env from the right place
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+console.log("Loaded key?", process.env.GOOGLE_GENERATIVE_AI_API_KEY ? "✅ yes" : "❌ no");
+
+
 
 import { stepCountIs, streamText } from "ai";
 import { google } from "@ai-sdk/google";
