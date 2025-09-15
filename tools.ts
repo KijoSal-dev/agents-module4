@@ -7,33 +7,44 @@ import path from "path";
 const excludeFiles = ["dist", "bun.lock"];
 
 /**
- * Schema for directory input
+ * Schema for directory input (with mode)
  */
 const fileChange = z.object({
   rootDir: z.string().min(1).describe("The root directory"),
+  mode: z
+    .enum(["staged", "unstaged"])
+    .default("staged")
+    .describe("Whether to get 'staged' or 'unstaged' changes"),
 });
 
 type FileChange = z.infer<typeof fileChange>;
 
 /**
- * Tool: Get staged file changes in a Git directory
+ * Tool: Get file changes in a Git directory
  */
-async function getFileChangesInDirectory({ rootDir }: FileChange) {
+async function getFileChangesInDirectory({ rootDir, mode }: FileChange) {
   const git = simpleGit(rootDir);
-  const summary = await git.diffSummary(["--cached"]);
+
+  // Decide whether to look at staged or unstaged changes
+  const args = mode === "staged" ? ["--cached"] : [];
+  const summary = await git.diffSummary(args);
+
   const diffs: { file: string; diff: string }[] = [];
 
   for (const file of summary.files) {
     if (excludeFiles.includes(file.file)) continue;
-    const diff = await git.diff(["--cached", "--", file.file]);
+
+    const diff = await git.diff([...args, "--", file.file]);
     diffs.push({ file: file.file, diff });
   }
 
-  return diffs;
+  return diffs.length > 0
+    ? diffs
+    : [`ℹ️ No ${mode} changes found in ${rootDir}`];
 }
 
 export const getFileChangesInDirectoryTool = tool({
-  description: "Gets the staged code changes made in a given directory",
+  description: "Gets the code changes in a given directory (staged or unstaged)",
   inputSchema: fileChange,
   execute: getFileChangesInDirectory,
 });
@@ -46,11 +57,10 @@ const commitMessageSchema = z.object({
 });
 
 export const generateCommitMessageTool = tool({
-  description: "Generates a commit message for the staged changes",
+  description: "Generates a commit message for the staged or unstaged changes",
   inputSchema: commitMessageSchema,
   async execute({ message }) {
-    // Just return the suggested commit message (AI provides it)
-    return `Suggested commit message:\n\n${message}`;
+    return `💡 Suggested commit message:\n\n${message}`;
   },
 });
 

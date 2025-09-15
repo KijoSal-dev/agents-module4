@@ -1,27 +1,17 @@
 # My Agent – AI Code Review Bot
 
 This project is an **AI-powered code review agent** built with [Bun](https://bun.sh/), [Vercel AI SDK](https://sdk.vercel.ai/), and Google’s Gemini model.  
-It scans a target directory for code changes and provides automated reviews and suggestions.
+It scans a target directory for Git changes and provides automated reviews, commit messages, and Markdown reports.
 
 ---
 
 ## 🚀 Features
-- Uses **Google Generative AI (Gemini)** for natural language code reviews.
-- Reads **Git changes** from a target directory.
+- Uses Google Generative AI (Gemini) for natural language code reviews.
+- Reads Git changes (staged or unstaged) from a target directory.
+- Proposes commit messages automatically.
+- Saves detailed Markdown reports of reviews.
 - Streams review feedback directly to the terminal.
 - Supports configurable target directories via CLI arguments.
-
----
-
-## 📂 Project Structure
-agents-module4/
-└── my-agent/
-├── index.ts # Entry point
-├── prompt.ts # System prompt configuration
-├── tools.ts # File/directory review tools
-├── .env # Environment variables (API key)
-└── README.md # Project documentation
-
 
 ---
 
@@ -42,25 +32,24 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
 **Move into the project folder**:
 cd my-agent
 
-1. **Review the current folder**
-bun run index.ts
+**Running**
+bun run index.ts ./ --staged
 
-2. **Review a different folder (e.g. project root)**
-bun run index.ts ..
-
-3. **Review a subfolder**
-bun run index.ts ./src
-
-**To install dependencies:**
+**To run project:**
 
 ```bash
-bun install
+cd my-agent
 ```
-
-To run:
 
 ```bash
-bun run index.ts
+bun run index.ts ./ --staged
 ```
+**🛠️ Tools**
+
+- getFileChangesInDirectoryTool – Fetches Git diffs
+
+- generateCommitMessageTool – Suggests commit message
+
+- generateMarkdownReportTool – Saves full review in Markdown
 
 This project was created using `bun init` in bun v1.2.22. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

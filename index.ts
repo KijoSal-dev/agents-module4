@@ -12,15 +12,16 @@ import {
 } from "./tools.ts";
 import path from "path";
 
-const codeReviewAgent = async (directory: string) => {
-  const absDir = path.resolve(directory);
-
+/**
+ * Run AI-powered code review
+ */
+const codeReviewAgent = async (absDir: string, mode: "staged" | "unstaged") => {
   const result = streamText({
     model: google("models/gemini-2.5-flash"),
     prompt: `
 You are reviewing code in: ${absDir}
 
-1. Use the \`getFileChangesInDirectoryTool\` to fetch staged changes.
+1. Use the \`getFileChangesInDirectoryTool\` to fetch **${mode} changes**.
 2. Provide a detailed review (correctness, clarity, maintainability, etc.).
 3. Use the \`generateCommitMessageTool\` to propose a commit message.
 4. Use the \`generateMarkdownReportTool\` to save the full review into a Markdown file.
@@ -39,6 +40,9 @@ You are reviewing code in: ${absDir}
   }
 };
 
-// ✅ Allow directory from CLI argument, fallback to current folder
-const targetDir = process.argv[2] || "./";
-await codeReviewAgent(targetDir);
+// ✅ CLI args
+const targetDir = process.argv[2] || "./"; // default current dir
+const modeArg = process.argv[3] === "--unstaged" ? "unstaged" : "staged"; // default staged
+const resolvedDir = path.resolve(targetDir);
+
+await codeReviewAgent(resolvedDir, modeArg);
