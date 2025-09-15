@@ -1,26 +1,35 @@
 // 👇 Load environment variables first
 import dotenv from "dotenv";
-import path from "path";
-
-// Force load .env from the right place
-dotenv.config({ path: path.resolve(__dirname, ".env") });
-
-console.log("Loaded key?", process.env.GOOGLE_GENERATIVE_AI_API_KEY ? "✅ yes" : "❌ no");
-
-
+dotenv.config();
 
 import { stepCountIs, streamText } from "ai";
 import { google } from "@ai-sdk/google";
 import { SYSTEM_PROMPT } from "./prompt.ts";
-import { getFileChangesInDirectoryTool } from "./tools.ts";
+import {
+  getFileChangesInDirectoryTool,
+  generateCommitMessageTool,
+  generateMarkdownReportTool,
+} from "./tools.ts";
+import path from "path";
 
-const codeReviewAgent = async (prompt: string) => {
+const codeReviewAgent = async (directory: string) => {
+  const absDir = path.resolve(directory);
+
   const result = streamText({
     model: google("models/gemini-2.5-flash"),
-    prompt,
+    prompt: `
+You are reviewing code in: ${absDir}
+
+1. Use the \`getFileChangesInDirectoryTool\` to fetch staged changes.
+2. Provide a detailed review (correctness, clarity, maintainability, etc.).
+3. Use the \`generateCommitMessageTool\` to propose a commit message.
+4. Use the \`generateMarkdownReportTool\` to save the full review into a Markdown file.
+`,
     system: SYSTEM_PROMPT,
     tools: {
-      getFileChangesInDirectoryTool: getFileChangesInDirectoryTool,
+      getFileChangesInDirectoryTool,
+      generateCommitMessageTool,
+      generateMarkdownReportTool,
     },
     stopWhen: stepCountIs(10),
   });
@@ -30,7 +39,6 @@ const codeReviewAgent = async (prompt: string) => {
   }
 };
 
-// Specify which directory the code review agent should review changes in your prompt
-await codeReviewAgent(
-  "Review the code changes in './' directory, make your reviews and suggestions file by file",
-);
+// ✅ Allow directory from CLI argument, fallback to current folder
+const targetDir = process.argv[2] || "./";
+await codeReviewAgent(targetDir);
